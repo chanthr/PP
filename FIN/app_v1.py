@@ -13,14 +13,44 @@ st.set_page_config(
 # Dark mode friendly 
 st.markdown("""
 <style>
-html, body, [class*="stApp"] { background-color:#0f1117; color:#e5e7eb; }
-h1,h2,h3,h4,h5,h6 { color:#e5e7eb; }
-.block-container { padding-top:2rem; }
-/* center text inside the input field */
-div[data-baseweb="input"] input { text-align:center; }
-/* remove extra top spacing before input on first screen */
-.center-wrap { max-width: 560px; margin: 0 auto; }
-.band-badge { padding:4px 10px; border-radius:9999px; font-size:12px; color:#fff; }
+/* 기본 배경/글자색: 라이트 모드 */
+html, body, [class*="stApp"] { 
+    background-color: #ffffff; 
+    color: #111827;   /* 거의 검은색 */
+}
+
+/* 제목 계열 */
+h1,h2,h3,h4,h5,h6 { 
+    color: #1f2937;   /* 진회색 → 가독성 좋음 */
+}
+
+/* 컨테이너 간격 */
+.block-container { 
+    padding-top: 2rem; 
+}
+
+/* 입력창 텍스트 중앙정렬 */
+div[data-baseweb="input"] input { 
+    text-align: center; 
+    color: #111827; 
+    background-color: #f9fafb;   /* 아주 연한 회색 배경 */
+    border: 1px solid #d1d5db;   /* 연회색 테두리 */
+    border-radius: 6px;
+}
+
+/* 첫 화면 입력 필드 정렬 */
+.center-wrap { 
+    max-width: 560px; 
+    margin: 0 auto; 
+}
+
+/* Band badge (Strong/Fair/Weak) 색상 유지 */
+.band-badge { 
+    padding: 4px 10px; 
+    border-radius: 9999px; 
+    font-size: 12px; 
+    color: #ffffff; 
+}
 </style>
 """, unsafe_allow_html=True)
 
