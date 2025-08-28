@@ -47,9 +47,34 @@ def build_query(t: str) -> str:
 # session
 if "started" not in st.session_state:
     st.session_state.started = False
-
 if "ticker" not in st.session_state:
     st.session_state.ticker = ""   # <-- no default "AAPL"
+
+# Sidebar
+with st.sidebar:
+    st.header("⚙️ Controls")
+    st.caption("Open this sidebar to tweak inputs / debug.")
+    sb_ticker = st.text_input("Ticker", value=st.session_state.ticker, placeholder="AAPL / 005930.KS / 7203.T")
+    col_sb1, col_sb2 = st.columns(2)
+    with col_sb1:
+        reanalyze = st.button("Re-Analyㄴe", use_container_width=True)
+    with col_sb2:
+        show_json = st.toggle("Show JSON", value=False)
+    # small help
+    st.caption("💡 KR/JP/HK 종목은 .KS / .T / .HK 접미사를 붙여주세요.")
+    st.caption("💡 Powered by 'Finance_Agent'")
+
+# If user triggers from sidebar
+if 'show_json' not in st.session_state:
+    st.session_state.show_json = False
+if 'sb_ticker' not in st.session_state:
+    st.session_state.sb_ticker = st.session_state.ticker
+
+if reanalyze:
+    st.session_state.started = True
+    st.session_state.ticker = (sb_ticker or "").strip().upper()
+    st.session_state.show_json = show_json
+    st.rerun()
 
 # First Screen 
 if not st.session_state.started:
