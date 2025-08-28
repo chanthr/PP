@@ -52,17 +52,33 @@ if "ticker" not in st.session_state:
 
 # Sidebar
 with st.sidebar:
-    st.header("⚙️ Controls")
+    st.markdown("### ⚙️ Controls")
     st.caption("Open this sidebar to tweak inputs / debug.")
-    sb_ticker = st.text_input("Ticker", value=st.session_state.ticker, placeholder="AAPL / 005930.KS / 7203.T")
-    col_sb1, col_sb2 = st.columns(2)
+
+    # Ticker input
+    sb_ticker = st.text_input(
+        "Ticker",
+        value=st.session_state.ticker,
+        placeholder="AAPL / 005930.KS / 7203.T"
+    )
+
+    # Align Re-Analyze and Show JSON toggle in one row
+    col_sb1, col_sb2 = st.columns([1.2, 1])
     with col_sb1:
-        reanalyze = st.button("Re-Analyㄴe", use_container_width=True)
+        reanalyze = st.button("🔄 Re-Analyze", use_container_width=True)
     with col_sb2:
         show_json = st.toggle("Show JSON", value=False)
-    # small help
-    st.caption("💡 KR/JP/HK 종목은 .KS / .T / .HK 접미사를 붙여주세요.")
-    st.caption("💡 Powered by 'Finance_Agent'")
+
+    # Tips (small & muted text)
+    st.markdown(
+        """
+        <div style="font-size: 13px; color: #9ca3af; margin-top: 1rem;">
+        💡 KR/JP/HK 종목은 <code>.KS</code> / <code>.T</code> / <code>.HK</code> 접미사를 붙이세요.<br><br>
+        💡 <i>Powered by Finance_Agent</i>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # If user triggers from sidebar
 if 'show_json' not in st.session_state:
