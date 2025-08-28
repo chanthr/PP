@@ -57,7 +57,7 @@ with st.sidebar:
     sb_ticker = st.text_input("Ticker", value=st.session_state.ticker, placeholder="AAPL / 005930.KS / 7203.T")
     col_sb1, col_sb2 = st.columns(2)
     with col_sb1:
-        reanalyse = st.button("Re-Analyㄴe", use_container_width=True)
+        reanalyze = st.button("Re-Analyㄴe", use_container_width=True)
     with col_sb2:
         show_json = st.toggle("Show JSON", value=False)
     # small help
