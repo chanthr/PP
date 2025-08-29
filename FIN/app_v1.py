@@ -3,7 +3,7 @@ import os
 import json
 import streamlit as st
 import finance_agent as fa  # your existing logic   
-from openinference.instrumentation.langchain import LangChainInstrumentor
+#from openinference.instrumentation.langchain import LangChainInstrumentor
 
 #px.launch_app()  
 
