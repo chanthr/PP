@@ -2,9 +2,7 @@
 import os
 import json
 import streamlit as st
-import finance_agent as fa  # your existing logic
-import phoenix as px # Phoenix Observability 
-from phoenix.otel import register      
+import finance_agent as fa  # your existing logic   
 from openinference.instrumentation.langchain import LangChainInstrumentor
 
 #px.launch_app()  
