@@ -1,7 +1,31 @@
 # app_v1.py 
+import os
 import json
 import streamlit as st
 import finance_agent as fa  # your existing logic
+import phoenix as px # Phoenix Observability 
+from phoenix.otel import register      
+from openinference.instrumentation.langchain import LangChainInstrumentor
+
+#px.launch_app()  
+
+ENABLE_PHOENIX = os.getenv("ENABLE_PHOENIX", "0") == "1" # 로컬에서만 Phoenix 켤지 선택 (기본 꺼짐)
+
+if ENABLE_PHOENIX and "phoenix_started" not in st.session_state:
+    # 1) OTel tracer 등록
+    tracer_provider = register()         # phoenix.otel.register()
+    # 2) LangChain 전역 계측
+    LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+    # 3) Phoenix UI 한 번만 띄우기 (http://localhost:6006)
+    px.launch_app()
+    st.session_state.phoenix_started = True
+
+st.set_page_config(
+    page_title="Liquidity & Solvency Analysis",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 st.set_page_config(
     page_title="Liquidity & Solvency Analysis",
@@ -47,8 +71,15 @@ def build_query(t: str) -> str:
 # session
 if "started" not in st.session_state:
     st.session_state.started = False
+
 if "ticker" not in st.session_state:
     st.session_state.ticker = ""   # <-- no default "AAPL"
+
+if "phoenix_started" not in st.session_state:
+    px.launch_app()  # Phoenix UI 실행
+    tracer_provider = register()  # Phoenix OTel tracer 등록
+    LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+    st.session_state.phoenix_started = True
 
 # Sidebar
 with st.sidebar:
@@ -122,8 +153,9 @@ if not st.session_state.started:
 st.title("📊 Liquidity & Solvency Analyser")
 
 query = build_query(st.session_state.ticker)
+
 if hasattr(fa, "run_query"):
-    result = fa.run_query(query)
+    result = fa.run_query(query) 
 else:
     payload = fa.compute_ratios_for_ticker(st.session_state.ticker)
     result = {

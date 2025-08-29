@@ -210,20 +210,21 @@ def compute_ratios_for_ticker(ticker: str) -> dict:
     }
 
 def explain_ratios_with_llm(ratio_payload: Dict, language: str = "ko") -> str:
-    """
-    계산된 지표(JSON)를 LLM에 넘겨 요약/판단문을 생성.
-    """
+    if llm is None:
+        # 키가 없으면 간단 요약만 반환 (앱은 계속 동작)
+        r = ratio_payload.get("ratios", {})
+        liq, sol = r.get("Liquidity", {}), r.get("Solvency", {})
+        cr = liq.get("current_ratio", {}).get("value")
+        de = sol.get("debt_to_equity", {}).get("value")
+        return f"간단 요약: 유동성 CR={cr:.2f} / 레버리지 D/E={de:.2f} (LLM 비활성화)"
+    # 키가 있으면 LLM 사용
     ask_lang = "Korean" if language.lower().startswith("ko") else "English"
     prompt = (
         f"You are a financial analysis assistant. Write in {ask_lang}.\n"
-        f"- Given the JSON payload with liquidity and solvency ratios,\n"
-        f"  produce a concise assessment with bullets.\n"
-        f"- Show key ratios with 2 decimals and label (Strong/Fair/Weak).\n"
-        f"- Add one plain-language takeaway.\n\n"
+        f"- Use the JSON to summarize liquidity & solvency with 2 decimals and labels.\n"
         f"JSON:\n{ratio_payload}"
     )
     res = llm.invoke(prompt)
-    # content extraction 
     return getattr(res, "content", str(res))
 
 # Tool 1

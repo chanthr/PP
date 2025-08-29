@@ -1,10 +1,11 @@
-streamlit==1.36.0
-pandas==2.2.2
-numpy==1.26.4
-yfinance==0.2.54
-python-dotenv==1.0.1
+streamlit>=1.36
+yfinance>=0.2.40
+pandas>=2.2
+python-dotenv>=1.0
+pydantic>=2.7
 
-# LLM을 쓸 때만 필요(키가 없으면 코드가 우회하도록 finance_agent.py에서 방어)
-groq==0.11.0
-langchain==0.2.14
-langchain-groq==0.1.4
+# LLM
+langchain>=0.2
+langchain-groq>=0.1.3
+langfuse>=2.57
+langfuse-langchain>=2.0.0
