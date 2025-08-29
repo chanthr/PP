@@ -31,7 +31,7 @@ CHANGELOG_MD = """
 # Page config + styles
 # -------------------------
 st.set_page_config(
-    page_title="LSA Tool",
+    page_title="LSA Agent",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -150,7 +150,7 @@ if reanalyze:
 # -------------------------
 if not st.session_state.started:
     st.markdown("<div style='text-align:center'>", unsafe_allow_html=True)
-    st.title("📊 LSA Tool")
+    st.title("📊 LSA Agent")
     st.caption("Enter a ticker symbol to analyse liquidity & solvency ratios.")
     st.caption("Powered by finance agent v1")
     st.markdown("</div>", unsafe_allow_html=True)
@@ -179,7 +179,7 @@ if not st.session_state.started:
 # -------------------------
 # Results screen
 # -------------------------
-st.title("📊 LSA Tool")
+st.title("📊 LSA Agent")
 
 query = build_query(st.session_state.ticker)
 
