@@ -1,5 +1,4 @@
-## finance_agent.py ##
-## Libraries 
+# finance_agent.py
 import os
 import re
 import json
@@ -14,20 +13,37 @@ load_dotenv()
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain.tools import tool
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+# ---------------------------
+# Safe LLM builder (Groq)
+# ---------------------------
+def _build_llm():
+    """
+    Build a Groq LLM safely.
+    - Reads GROQ_API_KEY from env if present.
+    - Uses `api_key=` (correct kwarg).
+    - Returns None on failure so the app can fall back gracefully.
+    """
+    model_name = os.getenv("GROQ_MODEL", "llama3-8b-8192")
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
+    try:
+        if api_key:
+            return ChatGroq(model=model_name, temperature=0.2, api_key=api_key)
+        # Many installs auto-read env; this path helps local setups.
+        return ChatGroq(model=model_name, temperature=0.2)
+    except Exception as e:
+        print(f"[finance_agent] Groq LLM disabled: {e}")
+        return None
+
+llm = _build_llm()  # <- single source of truth
 
 # =========================
 # yfinance helpers
 # =========================
 def _safe_info(t: yf.Ticker) -> Dict:
     try:
-        if hasattr(t, "get_info"):
-            info = t.get_info()
-        else:
-            info = getattr(t, "info", {}) or {}
+        info = t.get_info() if hasattr(t, "get_info") else (getattr(t, "info", {}) or {})
         return info if isinstance(info, dict) else {}
     except Exception:
         return {}
@@ -212,7 +228,7 @@ def compute_ratios_for_ticker(ticker: str) -> dict:
         "notes": "Latest quarterly (fallback to annual) statements via yfinance; ratios are approximations."
     }
 
-# LangChain Tool (확장 용)
+# LangChain Tool (optional)
 @tool("finance_health_tool")
 def finance_health_tool(ticker: str) -> str:
     """티커를 받아 유동성/건전성 비율을 계산해 JSON 문자열로 반환."""
@@ -240,11 +256,7 @@ def pick_valid_ticker(user_query: str) -> str:
 # =========================
 # Narrative via LangChain
 # =========================
-# LLM(체인용) 준비
-_llm = ChatGroq(model="llama3-8b-8192", temperature=0.2, groq_api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 _output_parser = StrOutputParser()
-
-# 프롬프트 (LangChain)
 _prompt = ChatPromptTemplate.from_messages([
     ("system", "You are a financial analysis assistant. Write in {ask_lang}. Be concise and clear."),
     ("human",
@@ -255,7 +267,7 @@ _prompt = ChatPromptTemplate.from_messages([
      "BUSINESS_SUMMARY:\n{business_summary}\n\n"
      "RATIOS_JSON:\n{ratios_json}"
     ),
-    MessagesPlaceholder("agent_scratchpad"),  # 미래 확장(툴콜 등) 대비
+    MessagesPlaceholder("agent_scratchpad"),
 ])
 
 def _fallback_narrative(payload: Dict, language: str, business_summary: Optional[str]) -> str:
@@ -298,8 +310,7 @@ def _fallback_narrative(payload: Dict, language: str, business_summary: Optional
         )
 
 def _make_narrative_with_langchain(payload: Dict, language: str, business_summary: Optional[str]) -> str:
-    """LangChain 체인으로 내러티브 생성 (GROQ 키 없으면 Fallback)."""
-    if _llm is None:
+    if llm is None:
         return _fallback_narrative(payload, language, business_summary)
 
     ask_lang = "Korean" if language.lower().startswith("ko") else "English"
@@ -307,10 +318,9 @@ def _make_narrative_with_langchain(payload: Dict, language: str, business_summar
         "ask_lang": ask_lang,
         "business_summary": business_summary or "(not available)",
         "ratios_json": json.dumps(payload, ensure_ascii=False),
-        "agent_scratchpad": [],  # 확장용
+        "agent_scratchpad": [],
     }
-
-    chain = _prompt | _llm | _output_parser
+    chain = _prompt | llm | _output_parser
     try:
         return chain.invoke(inputs)
     except Exception as e:
@@ -320,7 +330,6 @@ def _make_narrative_with_langchain(payload: Dict, language: str, business_summar
 # Public entry
 # =========================
 def run_query(user_query: str, language: str = "ko") -> dict:
-    """질의 → 티커 추출 → 비율 계산 → 회사 소개 → LangChain 내러티브"""
     ticker = pick_valid_ticker(user_query)
     payload = compute_ratios_for_ticker(ticker)
     business_summary = _get_company_summary(payload["ticker"])
@@ -348,7 +357,6 @@ def run_query(user_query: str, language: str = "ko") -> dict:
         "explanation": explanation,
     }
 
-# CLI 테스트
 if __name__ == "__main__":
     q = input("예: 'AAPL 유동성/건전성 평가' > ").strip()
     out = run_query(q, language="ko")
