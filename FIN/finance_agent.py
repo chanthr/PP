@@ -260,11 +260,22 @@ _output_parser = StrOutputParser()
 _prompt = ChatPromptTemplate.from_messages([
     ("system", "You are a financial analysis assistant. Write in {ask_lang}. Be concise and clear."),
     ("human",
-     "Task:\n"
-     "1) Briefly describe what the company does (1–2 sentences). Use the provided BUSINESS_SUMMARY if present.\n"
-     "2) Summarize liquidity (current/quick/cash) and solvency (D/E, debt ratio, interest coverage) with two decimals and a label (Strong/Fair/Weak).\n"
-     "3) Provide one short plain-language takeaway.\n"
-     "4) Finally, give a 1–2 sentence overall evaluation of the company's financial health (liquidity + solvency combined). Use clear judgmental language (e.g., 'overall financially strong', 'moderately healthy but leveraged', 'weak financial standing').\n\n"
+     "Return **Markdown only** using **this exact template**:\n\n"
+     "### Company overview\n"
+     "{one_or_two_sentences_using_BUSINESS_SUMMARY_if_available}\n\n"
+     "### 💧 Liquidity\n"
+     "- Current Ratio: <value> (<band>)\n"
+     "- Quick Ratio: <value> (<band>)\n"
+     "- Cash Ratio: <value> (<band>)\n\n"
+     "### 🛡️ Solvency\n"
+     "- Debt-to-Equity: <value> (<band>)\n"
+     "- Debt Ratio: <value> (<band>)\n"
+     "- Interest Coverage: <value> (<band>)\n\n"
+     "### ✅ Overall financial health\n"
+     "Provide a **1–2 sentence** overall judgment combining liquidity and solvency (e.g., 'overall financially strong', 'moderately healthy but leveraged', 'weak financial standing').\n\n"
+     "### ℹ️ Takeaway\n"
+     "One short plain-language takeaway.\n\n"
+     "Use the data below.\n"
      "BUSINESS_SUMMARY:\n{business_summary}\n\n"
      "RATIOS_JSON:\n{ratios_json}"
     ),
