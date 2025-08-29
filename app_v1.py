@@ -9,7 +9,7 @@ import finance_agent as fa  # <-- 방금 만든 LangChain 기반 agent
 # Page config + styles
 # -------------------------
 st.set_page_config(
-    page_title="Liquidity & Solvency Analysis",
+    page_title="LSA Tool",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -68,7 +68,7 @@ with st.sidebar:
     st.caption("")
 
     # Language selector
-    lang_label = st.selectbox("Language", ["한국어", "English"], index=0, help="Narrative language")
+    lang_label = st.selectbox("Language", ["Korean", "English"], index=0, help="Narrative language")
     lang_code = "ko" if lang_label == "한국어" else "en"
 
     # Ticker input
