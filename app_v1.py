@@ -65,7 +65,7 @@ if "show_json" not in st.session_state:
 # -------------------------
 with st.sidebar:
     st.markdown("### ⚙️ Controls")
-    st.caption("Open this sidebar to tweak inputs / debug.")
+    st.caption("")
 
     # Language selector
     lang_label = st.selectbox("Language", ["한국어", "English"], index=0, help="Narrative language")
@@ -94,6 +94,15 @@ with st.sidebar:
         """,
         unsafe_allow_html=True
     )
+    st.markdown("---")
+    st.caption("Groq API")
+    new_key = st.text_input("GROQ_API_KEY (optional runtime override)", type="password")
+    if st.button("Use this key"):
+        if new_key.strip():
+            fa.set_runtime_groq_key(new_key.strip())  # 🔧 런타임 주입
+            st.success("GROQ key set. Re-run analysis.")
+        else:
+            st.warning("Please paste a non-empty key.")
 
 # Sidebar action
 if reanalyze:
