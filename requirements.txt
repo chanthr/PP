@@ -1,9 +1,12 @@
-streamlit>=1.36
-yfinance>=0.2.40
+# 기본
 pandas>=2.2
+yfinance>=0.2.40
 python-dotenv>=1.0
-pydantic>=2.7
+
+# Streamlit (웹 UI)
+streamlit>=1.36
 
 # LangChain + Groq
 langchain>=0.2
+langchain-core>=0.2
 langchain-groq>=0.1.3
