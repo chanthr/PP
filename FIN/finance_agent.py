@@ -8,12 +8,18 @@ import pandas as pd
 import yfinance as yf
 from dotenv import load_dotenv
 
+load_dotenv()
+
+
 # Tools
 def _short_overview(text: str, max_words: int = 30) -> str: # 30 words summarizer 
     if not text:
         return "(not available)"
     words = str(text).split()
     return " ".join(words[:max_words]) + ("…" if len(words) > max_words else "")
+
+def groq_status():
+    return {"available": llm is not None, "reason": _GROQ_REASON}
 
 # --- LangChain / Groq ---
 load_dotenv()
@@ -305,6 +311,7 @@ _prompt = ChatPromptTemplate.from_messages([
 
 def _fallback_narrative(payload: Dict, language: str, business_summary: Optional[str]) -> str:
     ask_lang = "Korean" if language.lower().startswith("ko") else "English"
+    summary30 = _short_overview(business_summary, 30) if business_summary else None  # ✅ 추가
     r = payload.get("ratios", {})
     liq, sol = r.get("Liquidity", {}), r.get("Solvency", {})
 
@@ -338,7 +345,7 @@ def _fallback_narrative(payload: Dict, language: str, business_summary: Optional
 
     if ask_lang == "Korean":
         return (
-            f"회사 개요: {business_summary or '회사 소개 정보를 가져오지 못했습니다.'}\n"
+            f"회사 개요: {summary30 or '회사 소개 정보를 가져오지 못했습니다.'}\n"
             "• 유동성: " + ", ".join([
                 fmt(liq.get("current_ratio"), "유동비율"),
                 fmt(liq.get("quick_ratio"), "당좌비율"),
@@ -353,7 +360,7 @@ def _fallback_narrative(payload: Dict, language: str, business_summary: Optional
         )
     else:
         return (
-            f"Company overview: {business_summary or 'Business description not available.'}\n"
+            f"Company overview: {summary30 or 'Business description not available.'}\n"
             "• Liquidity: " + ", ".join([
                 fmt(liq.get("current_ratio"), "Current Ratio"),
                 fmt(liq.get("quick_ratio"), "Quick Ratio"),
