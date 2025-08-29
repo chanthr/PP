@@ -5,6 +5,29 @@ import json
 import streamlit as st
 import finance_agent as fa  # <-- 방금 만든 LangChain 기반 agent
 
+
+### --- Update log --- ###
+
+CHANGELOG_MD = """
+
+### ✅ v0.1.0 — LLM 연결 & Fallback 개선
+- ChatGroq 초기화 실패 사유를 내부에 저장하고 UI에 노출 (fallback 원인 파악 쉬움)
+- 런타임에서 GROQ_API_KEY 교체 후 즉시 재시도 가능하도록 구조 정리
+- Narrative 섹션 표기/레이아웃 정돈
+
+### ✅ v0.0.5 — Fallback 요약 개선
+- 회사 소개 30단어 요약 (fallback일 때도 장문 출력 방지)
+- 종합 평가(한줄평) 점수화 로직(매우 양호/양호/보통/취약)
+
+### ✅ v0.0.1 — 초기 릴리스
+- 유동성/건전성 비율 계산
+- Narrative(LLM/Fallback) 생성
+- 기본 Streamlit UI
+"""
+
+############################
+
+
 # -------------------------
 # Page config + styles
 # -------------------------
@@ -64,9 +87,22 @@ if "show_json" not in st.session_state:
 # Sidebar (controls)
 # -------------------------
 with st.sidebar:
-    st.markdown("### ⚙️ Controls")
-    st.caption("")
+    status = getattr(fa, "llm", None)
+    if status is None:
+        st.info("LLM: Fallback mode (no key or init failure).")
+    else:
+        st.success("LLM: Connected (Groq).")
 
+    # Header
+    st.markdown("### ⚙️ Controls")
+
+    # Page Selector 
+    page = st.radio("", ["📈 Analysis", "📝 Patch Notes"], index=0)
+    if page == "📝 Updates":
+        st.title("📝 Release Notes")   # ← 이거 하나만 남김
+        st.markdown(CHANGELOG_MD, unsafe_allow_html=True)
+        st.stop()  # 다른 화면 로직 실행 방지
+    
     # Language selector
     lang_label = st.selectbox("Language", ["Korean", "English"], index=0, help="Narrative language")
     lang_code = "ko" if lang_label == "한국어" else "en"
@@ -89,21 +125,21 @@ with st.sidebar:
         """
         <div class="small-muted" style="margin-top: 1rem;">
         💡 KR/JP/HK 종목은 <code>.KS</code> / <code>.T</code> / <code>.HK</code> 접미사를 붙여주세요.<br><br>
-        💡 <i>Powered by Finance Agent v1</i>
+        💡 <i>Powered by finance agent v1</i>
         </div>
         """,
         unsafe_allow_html=True
     )
     st.markdown("---")
-    st.caption("Groq API")
-    new_key = st.text_input("GROQ_API_KEY (optional runtime override)", type="password")
+    st.caption("Use your Groq API Key")
+    new_key = st.text_input("", type="password")
     if st.button("Use this key"):
         if new_key.strip():
             fa.set_runtime_groq_key(new_key.strip())  # 🔧 런타임 주입
             st.success("GROQ key set. Re-run analysis.")
         else:
             st.warning("Please paste a non-empty key.")
-
+    
 # Sidebar action
 if reanalyze:
     st.session_state.started = True
@@ -117,7 +153,7 @@ if not st.session_state.started:
     st.markdown("<div style='text-align:center'>", unsafe_allow_html=True)
     st.title("📊 LSA Tool")
     st.caption("Enter a ticker symbol to analyse liquidity & solvency ratios.")
-    st.caption("Powered by Finance Agent v1")
+    st.caption("Powered by finance agent v1")
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="center-wrap">', unsafe_allow_html=True)
