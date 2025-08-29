@@ -19,24 +19,18 @@ from langchain.tools import tool
 # Safe LLM builder (Groq)
 # ---------------------------
 def _build_llm():
-    """
-    Build a Groq LLM safely.
-    - Reads GROQ_API_KEY from env if present.
-    - Uses `api_key=` (correct kwarg).
-    - Returns None on failure so the app can fall back gracefully.
-    """
-    model_name = os.getenv("GROQ_MODEL", "llama3-8b-8192")
-    api_key = os.getenv("GROQ_API_KEY", "").strip()
     try:
-        if api_key:
-            return ChatGroq(model=model_name, temperature=0.2, api_key=api_key)
-        # Many installs auto-read env; this path helps local setups.
-        return ChatGroq(model=model_name, temperature=0.2)
+        key = os.getenv("GROQ_API_KEY", "").strip()
+        model = os.getenv("GROQ_MODEL", "llama3-8b-8192")
+        if key:
+            return ChatGroq(model=model, temperature=0.2, api_key=key)  # ✅ api_key
+        # env에서 자동 인식되는 경우도 시도
+        return ChatGroq(model=model, temperature=0.2)
     except Exception as e:
         print(f"[finance_agent] Groq LLM disabled: {e}")
         return None
 
-llm = _build_llm()  # <- single source of truth
+_llm = _build_llm()
 
 # =========================
 # yfinance helpers
@@ -286,10 +280,35 @@ def _fallback_narrative(payload: Dict, language: str, business_summary: Optional
     ask_lang = "Korean" if language.lower().startswith("ko") else "English"
     r = payload.get("ratios", {})
     liq, sol = r.get("Liquidity", {}), r.get("Solvency", {})
+
     def fmt(node, name):
         v = (node or {}).get("value")
         b = (node or {}).get("band", "N/A")
         return f"{name}: {'N/A' if v is None else f'{v:.2f}'} ({b})"
+
+    # ✅ 동적 총평
+    def overall_verdict():
+        score_map = {"Strong": 2, "Fair": 1, "Weak": 0, "N/A": 0}
+        bands = [
+            (liq.get("current_ratio") or {}).get("band", "N/A"),
+            (liq.get("quick_ratio") or {}).get("band", "N/A"),
+            (liq.get("cash_ratio") or {}).get("band", "N/A"),
+            (sol.get("debt_to_equity") or {}).get("band", "N/A"),
+            (sol.get("debt_ratio") or {}).get("band", "N/A"),
+            (sol.get("interest_coverage") or {}).get("band", "N/A"),
+        ]
+        total = sum(score_map.get(b, 0) for b in bands)
+        if ask_lang == "Korean":
+            if total >= 9: return "재무건전성은 **매우 양호**한 편입니다."
+            if total >= 6: return "재무건전성은 **양호**한 편입니다."
+            if total >= 3: return "재무건전성은 **보통** 수준입니다."
+            return "재무건전성은 **취약**한 편입니다."
+        else:
+            if total >= 9: return "Overall financial health is **excellent**."
+            if total >= 6: return "Overall financial health is **good**."
+            if total >= 3: return "Overall financial health is **average**."
+            return "Overall financial health is **weak**."
+
     if ask_lang == "Korean":
         return (
             f"회사 개요: {business_summary or '회사 소개 정보를 가져오지 못했습니다.'}\n"
@@ -303,7 +322,7 @@ def _fallback_narrative(payload: Dict, language: str, business_summary: Optional
                 fmt(sol.get("debt_ratio"), "부채비율(TA)"),
                 fmt(sol.get("interest_coverage"), "이자보상배율"),
             ]) + "\n"
-            "한줄평: 수치 기반의 간단 평가이므로 참고용으로 보세요."
+            f"한줄평: {overall_verdict()}"
         )
     else:
         return (
@@ -318,7 +337,7 @@ def _fallback_narrative(payload: Dict, language: str, business_summary: Optional
                 fmt(sol.get("debt_ratio"), "Debt Ratio"),
                 fmt(sol.get("interest_coverage"), "Interest Coverage"),
             ]) + "\n"
-            "Takeaway: Consider this a simplified, ratio-based assessment."
+            f"Takeaway: {overall_verdict()}"
         )
 
 def _make_narrative_with_langchain(payload: Dict, language: str, business_summary: Optional[str]) -> str:
@@ -367,6 +386,7 @@ def run_query(user_query: str, language: str = "ko") -> dict:
         },
         "notes": payload.get("notes"),
         "explanation": explanation,
+        "meta": {"source": "llm" if (_llm is not None) else "fallback"}
     }
 
 if __name__ == "__main__":
