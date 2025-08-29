@@ -23,14 +23,13 @@ def _build_llm():
         key = os.getenv("GROQ_API_KEY", "").strip()
         model = os.getenv("GROQ_MODEL", "llama3-8b-8192")
         if key:
-            return ChatGroq(model=model, temperature=0.2, api_key=key)  # ✅ api_key
-        # env에서 자동 인식되는 경우도 시도
-        return ChatGroq(model=model, temperature=0.2)
+            return ChatGroq(model=model, temperature=0.2, api_key=key)
+        return ChatGroq(model=model, temperature=0.2)  # env 자동 인식
     except Exception as e:
         print(f"[finance_agent] Groq LLM disabled: {e}")
         return None
 
-_llm = _build_llm()
+llm = _build_llm()   # ✅ 여기서 이름을 llm으로 고정
 
 # =========================
 # yfinance helpers
@@ -386,7 +385,7 @@ def run_query(user_query: str, language: str = "ko") -> dict:
         },
         "notes": payload.get("notes"),
         "explanation": explanation,
-        "meta": {"source": "llm" if (_llm is not None) else "fallback"}
+        "meta": {"source": "llm" if (llm is not None) else "fallback"}
     }
 
 if __name__ == "__main__":
