@@ -7,8 +7,9 @@ from openinference.instrumentation.langchain import LangChainInstrumentor
 
 #px.launch_app()  
 
-ENABLE_PHOENIX = os.getenv("ENABLE_PHOENIX", "0") == "1" # 로컬에서만 Phoenix 켤지 선택 (기본 꺼짐)
+#ENABLE_PHOENIX = os.getenv("ENABLE_PHOENIX", "0") == "1" # 로컬에서만 Phoenix 켤지 선택 (기본 꺼짐)
 
+'''
 if ENABLE_PHOENIX and "phoenix_started" not in st.session_state:
     # 1) OTel tracer 등록
     tracer_provider = register()         # phoenix.otel.register()
@@ -24,7 +25,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
-
+'''
 st.set_page_config(
     page_title="Liquidity & Solvency Analysis",
     page_icon="📊",
