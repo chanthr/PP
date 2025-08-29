@@ -150,7 +150,7 @@ if reanalyze:
 # -------------------------
 if not st.session_state.started:
     st.markdown("<div style='text-align:center'>", unsafe_allow_html=True)
-    st.title("📊 LSA Agent")
+    st.title("📊 Liquidity & Solvency Analysis")
     st.caption("Enter a ticker symbol to analyse liquidity & solvency ratios.")
     st.caption("Powered by finance agent v1")
     st.markdown("</div>", unsafe_allow_html=True)
@@ -179,7 +179,7 @@ if not st.session_state.started:
 # -------------------------
 # Results screen
 # -------------------------
-st.title("📊 LSA Agent")
+st.title("📊 Liquidity & Solvency Analysis")
 
 query = build_query(st.session_state.ticker)
 
