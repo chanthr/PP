@@ -194,7 +194,19 @@ with cS3: ratio_card("Interest Coverage", sol.get("interest_coverage",{}))
 
 # Narrative
 st.markdown("### 📝 Narrative")
-st.write(result.get("explanation", "—"))
+
+narr = result.get("explanation", "—") or "—"
+
+# 문단 단위로 끊기
+for block in narr.split("\n"):
+    block = block.strip()
+    if not block:
+        continue
+    # 불릿 처리
+    if block.startswith("•") or block.startswith("-"):
+        st.markdown(block)
+    else:
+        st.markdown(f"{block}")
 
 # Optional: raw JSON view
 if st.session_state.show_json:
