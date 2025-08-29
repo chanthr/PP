@@ -2,6 +2,18 @@
 import json
 import streamlit as st
 import finance_agent as fa  # your existing logic
+import phoenix as px # Phoenix Observability 
+from phoenix.otel import register      
+from openinference.instrumentation.langchain import LangChainInstrumentor
+
+px.launch_app()  # http://localhost:6006
+
+st.set_page_config(
+    page_title="Liquidity & Solvency Analysis",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 st.set_page_config(
     page_title="Liquidity & Solvency Analysis",
@@ -47,8 +59,15 @@ def build_query(t: str) -> str:
 # session
 if "started" not in st.session_state:
     st.session_state.started = False
+
 if "ticker" not in st.session_state:
     st.session_state.ticker = ""   # <-- no default "AAPL"
+
+if "phoenix_started" not in st.session_state:
+    px.launch_app()  # Phoenix UI 실행
+    tracer_provider = register()  # Phoenix OTel tracer 등록
+    LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+    st.session_state.phoenix_started = True
 
 # Sidebar
 with st.sidebar:
@@ -122,8 +141,9 @@ if not st.session_state.started:
 st.title("📊 Liquidity & Solvency Analyser")
 
 query = build_query(st.session_state.ticker)
+
 if hasattr(fa, "run_query"):
-    result = fa.run_query(query)
+    result = fa.run_query(query) 
 else:
     payload = fa.compute_ratios_for_ticker(st.session_state.ticker)
     result = {
