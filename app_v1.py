@@ -3,26 +3,25 @@ import re
 import os
 import json
 import streamlit as st
-import finance_agent as fa  # <-- 방금 만든 LangChain 기반 agent
+import finance_agent as fa  
 
 
 ### --- Update log --- ###
 
 CHANGELOG_MD = """
+### ✅ v0.1.0 — LLM Integration & Fallback Improvements
+- Store ChatGroq initialization failure reasons internally and display in UI (easier to identify fallback cause)
+- Restructure to allow immediate retry after replacing GROQ_API_KEY at runtime
+- Cleaned up Narrative section formatting/layout
 
-### ✅ v0.1.0 — LLM 연결 & Fallback 개선
-- ChatGroq 초기화 실패 사유를 내부에 저장하고 UI에 노출 (fallback 원인 파악 쉬움)
-- 런타임에서 GROQ_API_KEY 교체 후 즉시 재시도 가능하도록 구조 정리
-- Narrative 섹션 표기/레이아웃 정돈
+### ✅ v0.0.5 — Fallback Summary Improvements
+- Company description limited to 30 words (prevents long output during fallback)
+- Overall financial health rating logic (Excellent / Good / Average / Weak)
 
-### ✅ v0.0.5 — Fallback 요약 개선
-- 회사 소개 30단어 요약 (fallback일 때도 장문 출력 방지)
-- 종합 평가(한줄평) 점수화 로직(매우 양호/양호/보통/취약)
-
-### ✅ v0.0.1 — 초기 릴리스
-- 유동성/건전성 비율 계산
-- Narrative(LLM/Fallback) 생성
-- 기본 Streamlit UI
+### ✅ v0.0.1 — Initial Release
+- Liquidity/Solvency ratio calculations
+- Narrative generation (LLM/Fallback)
+- Basic Streamlit UI
 """
 
 ############################
