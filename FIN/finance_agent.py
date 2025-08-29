@@ -15,21 +15,42 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 from langchain.tools import tool
 
+# 파일 상단 import 바로 아래에 추가
+try:
+    import streamlit as st
+    _HAVE_ST = True
+except Exception:
+    _HAVE_ST = False
+
+def _get_groq_key() -> str:
+    key = os.getenv("GROQ_API_KEY", "").strip()
+    if not key and _HAVE_ST:
+        try:
+            key = str(st.secrets.get("GROQ_API_KEY", "")).strip()
+        except Exception:
+            pass
+    return key
+
 # ---------------------------
 # Safe LLM builder (Groq)
 # ---------------------------
+_GROQ_REASON = None  # ← 전역 사유 저장
+
 def _build_llm():
+    global _GROQ_REASON
     try:
-        key = os.getenv("GROQ_API_KEY", "").strip()
+        key = _get_groq_key()
         model = os.getenv("GROQ_MODEL", "llama3-8b-8192")
-        if key:
-            return ChatGroq(model=model, temperature=0.2, api_key=key)
-        return ChatGroq(model=model, temperature=0.2)  # env 자동 인식
+        if not key:
+            _GROQ_REASON = "GROQ_API_KEY not found (env nor st.secrets)."
+            return None
+        # langchain_groq는 api_key= 사용 (groq_api_key 아님)
+        return ChatGroq(model=model, temperature=0.2, api_key=key)
     except Exception as e:
-        print(f"[finance_agent] Groq LLM disabled: {e}")
+        _GROQ_REASON = f"ChatGroq init failed: {e}"
         return None
 
-llm = _build_llm()   # ✅ 여기서 이름을 llm으로 고정
+llm = _build_llm()
 
 # =========================
 # yfinance helpers
@@ -251,22 +272,27 @@ def pick_valid_ticker(user_query: str) -> str:
 # =========================
 _output_parser = StrOutputParser()
 _prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a financial analysis assistant. Write in {ask_lang}. Be concise and clear."),
+    ("system", 
+     "You are a financial analysis assistant. "
+     "Write in {ask_lang}. "
+     "Be concise and clear. "
+     "When summarizing company description, limit to **30 words maximum (or 30 Korean words if Korean)**."
+    ),
     ("human",
      "Return **Markdown only** using **this exact template**:\n\n"
-     "### Company overview\n"
-     "{one_or_two_sentences_using_BUSINESS_SUMMARY_if_available}\n\n"
-     "### 💧 Liquidity\n"
+     "### 회사 개요 / Company overview\n"
+     "{business_summary}\n\n"
+     "### 💧 유동성 / Liquidity\n"
      "- Current Ratio: <value> (<band>)\n"
      "- Quick Ratio: <value> (<band>)\n"
      "- Cash Ratio: <value> (<band>)\n\n"
-     "### 🛡️ Solvency\n"
+     "### 🛡️ 건전성 / Solvency\n"
      "- Debt-to-Equity: <value> (<band>)\n"
      "- Debt Ratio: <value> (<band>)\n"
      "- Interest Coverage: <value> (<band>)\n\n"
-     "### ✅ Overall financial health\n"
-     "Provide a **1–2 sentence** overall judgment combining liquidity and solvency (e.g., 'overall financially strong', 'moderately healthy but leveraged', 'weak financial standing').\n\n"
-     "### ℹ️ Takeaway\n"
+     "### ✅ 종합 평가 / Overall financial health\n"
+     "Provide a **1–2 sentence** overall judgment combining liquidity and solvency.\n\n"
+     "### ℹ️ 핵심 요약 / Takeaway\n"
      "One short plain-language takeaway.\n\n"
      "Use the data below.\n"
      "BUSINESS_SUMMARY:\n{business_summary}\n\n"
