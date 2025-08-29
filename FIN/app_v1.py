@@ -197,16 +197,16 @@ st.markdown("### 📝 Narrative")
 
 narr = result.get("explanation", "—") or "—"
 
-# 문단 단위로 끊기
-for block in narr.split("\n"):
-    block = block.strip()
-    if not block:
-        continue
-    # 불릿 처리
-    if block.startswith("•") or block.startswith("-"):
-        st.markdown(block)
-    else:
-        st.markdown(f"{block}")
+# LLM이 마크다운 섹션/불릿을 그대로 내보내므로, 그대로 렌더
+st.markdown(narr)
+
+# (선택) 'Overall financial health' 첫 줄을 상단에 강조 표시
+import re
+m = re.search(r"###\s*✅\s*Overall financial health\s*(.+)", narr, re.IGNORECASE | re.DOTALL)
+if m:
+    headline = m.group(1).strip().splitlines()[0]
+    if headline:
+        st.success(headline)
 
 # Optional: raw JSON view
 if st.session_state.show_json:
