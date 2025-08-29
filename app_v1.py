@@ -97,9 +97,9 @@ with st.sidebar:
     st.markdown("### ⚙️ Controls")
 
     # Page Selector 
-    page = st.radio("", ["📈 Analysis", "📝 Patch Notes"], index=0)
+    page = st.radio("", ["📈 Analysis", "📝 Updates"], index=0)
     if page == "📝 Updates":
-        st.title("📝 Release Notes")   # ← 이거 하나만 남김
+        st.title("📝 Patch Notes")   # ← 이거 하나만 남김
         st.markdown(CHANGELOG_MD, unsafe_allow_html=True)
         st.stop()  # 다른 화면 로직 실행 방지
     
