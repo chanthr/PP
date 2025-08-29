@@ -65,7 +65,7 @@ with st.sidebar:
     # Align Re-Analyze and Show JSON toggle in one row
     col_sb1, col_sb2 = st.columns([1.2, 1])
     with col_sb1:
-        reanalyze = st.button("🔄 Re-Analyze", use_container_width=True)
+        reanalyze = st.button("🔄 Re-Analyse", use_container_width=True)
     with col_sb2:
         show_json = st.toggle("Show JSON", value=False)
 
@@ -108,7 +108,7 @@ if not st.session_state.started:
         key="center_ticker",
         label_visibility="collapsed"   # <-- remove the label bar (no grey header)
     )
-    go = st.button("🔎 Analyze", type="primary", use_container_width=True)
+    go = st.button("🔎 Analyse", type="primary", use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     if not go:
