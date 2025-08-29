@@ -1,7 +1,0 @@
-streamlit
-pandas
-yfinance
-python-dotenv
-langchain==0.2.*
-langchain-groq==0.1.*
-groq==0.11.*
