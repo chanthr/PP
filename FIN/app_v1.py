@@ -10,6 +10,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed",  # keep hidden; users can open with toggle
 )
 
+reanalyze   = False
+show_json   = st.session_state.get("show_json", False)
+sb_ticker   = st.session_state.get("ticker", "")
+
 # Dark mode friendly 
 st.markdown("""
 <style>
@@ -58,16 +62,17 @@ with st.sidebar:
     # Ticker input
     sb_ticker = st.text_input(
         "Ticker",
-        value=st.session_state.ticker,
-        placeholder="AAPL / 005930.KS / 7203.T"
+        value=sb_ticker,
+        placeholder="AAPL / 005930.KS / 7203.T",
+        key="sb_ticker"
     )
 
-    # Align Re-Analyze and Show JSON toggle in one row
-    col_sb1, col_sb2 = st.columns([1.2, 1])
-    with col_sb1:
-        reanalyze = st.button("🔄 Re-Analyse", use_container_width=True)
-    with col_sb2:
-        show_json = st.toggle("Show JSON", value=False)
+    # One row: Re-Analyze button + Show JSON toggle
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        reanalyze = st.button("🔄 Re-Analyze", use_container_width=True, key="btn_reanalyze")
+    with c2:
+        show_json = st.toggle("Show JSON", value=show_json, key="tgl_show_json")
 
     # Tips (small & muted text)
     st.markdown(
@@ -86,10 +91,11 @@ if 'show_json' not in st.session_state:
 if 'sb_ticker' not in st.session_state:
     st.session_state.sb_ticker = st.session_state.ticker
 
+# reflect sidebar state safely
+st.session_state.show_json = show_json
 if reanalyze:
     st.session_state.started = True
     st.session_state.ticker = (sb_ticker or "").strip().upper()
-    st.session_state.show_json = show_json
     st.rerun()
 
 # First Screen 
