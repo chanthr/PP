@@ -88,8 +88,8 @@ with st.sidebar:
     st.markdown(
         """
         <div class="small-muted" style="margin-top: 1rem;">
-        💡 KR/JP/HK 종목은 <code>.KS</code> / <code>.T</code> / <code>.HK</code> 접미사를 붙이세요.<br><br>
-        💡 <i>Powered by Finance_Agent (LangChain + Groq)</i>
+        💡 KR/JP/HK 종목은 <code>.KS</code> / <code>.T</code> / <code>.HK</code> 접미사를 붙여주세요.<br><br>
+        💡 <i>Powered by Finance Agent v1</i>
         </div>
         """,
         unsafe_allow_html=True
