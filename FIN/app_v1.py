@@ -1,35 +1,34 @@
-# app_v1.py 
+# app_v1.py
 import os
 import json
 import streamlit as st
-import finance_agent as fa  # your existing logic   
-#from openinference.instrumentation.langchain import LangChainInstrumentor
+import finance_agent as fa  # <-- 방금 만든 LangChain 기반 agent
 
-#px.launch_app()  
-
-#ENABLE_PHOENIX = os.getenv("ENABLE_PHOENIX", "0") == "1" # 로컬에서만 Phoenix 켤지 선택 (기본 꺼짐)
-
+# -------------------------
+# Page config + styles
+# -------------------------
 st.set_page_config(
     page_title="Liquidity & Solvency Analysis",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="collapsed",  # keep hidden; users can open with toggle
+    initial_sidebar_state="collapsed",
 )
 
-# Dark mode friendly 
 st.markdown("""
 <style>
 html, body, [class*="stApp"] { background-color:#0f1117; color:#e5e7eb; }
 h1,h2,h3,h4,h5,h6 { color:#e5e7eb; }
 .block-container { padding-top:2rem; }
-/* center text inside the input field */
 div[data-baseweb="input"] input { text-align:center; }
-/* remove extra top spacing before input on first screen */
 .center-wrap { max-width: 560px; margin: 0 auto; }
 .band-badge { padding:4px 10px; border-radius:9999px; font-size:12px; color:#fff; }
+.small-muted { font-size: 13px; color: #9ca3af; }
 </style>
 """, unsafe_allow_html=True)
 
+# -------------------------
+# Helpers
+# -------------------------
 def fmt_ratio(x):
     if x is None: return "N/A"
     try: return f"{float(x):.2f}"
@@ -50,107 +49,123 @@ def ratio_card(title, node):
 def build_query(t: str) -> str:
     return f"{(t or '').strip()} 유동성/건전성 평가"
 
-# session
+# -------------------------
+# Session init
+# -------------------------
 if "started" not in st.session_state:
     st.session_state.started = False
-
 if "ticker" not in st.session_state:
-    st.session_state.ticker = ""   # <-- no default "AAPL"
+    st.session_state.ticker = ""
+if "show_json" not in st.session_state:
+    st.session_state.show_json = False
 
-# Sidebar
+# -------------------------
+# Sidebar (controls)
+# -------------------------
 with st.sidebar:
     st.markdown("### ⚙️ Controls")
     st.caption("Open this sidebar to tweak inputs / debug.")
+
+    # Language selector
+    lang_label = st.selectbox("Language", ["한국어", "English"], index=0, help="Narrative language")
+    lang_code = "ko" if lang_label == "한국어" else "en"
 
     # Ticker input
     sb_ticker = st.text_input(
         "Ticker",
         value=st.session_state.ticker,
-        placeholder="AAPL / 005930.KS / 7203.T"
+        placeholder="AAPL / 005930.KS / 7203.T",
+        key="sb_ticker",
     )
 
-    # Align Re-Analyze and Show JSON toggle in one row
-    col_sb1, col_sb2 = st.columns([1.2, 1])
-    with col_sb1:
-        reanalyze = st.button("🔄 Re-Analyze", use_container_width=True)
-    with col_sb2:
-        show_json = st.toggle("Show JSON", value=False)
+    c1, c2 = st.columns([1.2, 1])
+    with c1:
+        reanalyze = st.button("🔄 Re-Analyse", use_container_width=True)
+    with c2:
+        st.session_state.show_json = st.toggle("Show JSON", value=st.session_state.show_json)
 
-    # Tips (small & muted text)
     st.markdown(
         """
-        <div style="font-size: 13px; color: #9ca3af; margin-top: 1rem;">
+        <div class="small-muted" style="margin-top: 1rem;">
         💡 KR/JP/HK 종목은 <code>.KS</code> / <code>.T</code> / <code>.HK</code> 접미사를 붙이세요.<br><br>
-        💡 <i>Powered by Finance_Agent</i>
+        💡 <i>Powered by Finance_Agent (LangChain + Groq)</i>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-# If user triggers from sidebar
-if 'show_json' not in st.session_state:
-    st.session_state.show_json = False
-if 'sb_ticker' not in st.session_state:
-    st.session_state.sb_ticker = st.session_state.ticker
-
+# Sidebar action
 if reanalyze:
     st.session_state.started = True
     st.session_state.ticker = (sb_ticker or "").strip().upper()
-    st.session_state.show_json = show_json
     st.rerun()
 
-# First Screen 
+# -------------------------
+# First screen (center input)
+# -------------------------
 if not st.session_state.started:
     st.markdown("<div style='text-align:center'>", unsafe_allow_html=True)
     st.title("📊 Liquidity & Solvency Analyser")
     st.caption("Enter a ticker symbol to analyse liquidity & solvency ratios.")
-    st.caption("Powered by 'Finance_Agent'")
+    st.caption("Powered by Finance_Agent")
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="center-wrap">', unsafe_allow_html=True)
     ticker = st.text_input(
         "Ticker",
-        value="",                      # <-- empty by default
+        value="",
         placeholder="e.g., AAPL, MSFT, 005930.KS, 7203.T",
         key="center_ticker",
-        label_visibility="collapsed"   # <-- remove the label bar (no grey header)
+        label_visibility="collapsed"
     )
-    go = st.button("🔎 Analyze", type="primary", use_container_width=True)
+    go = st.button("🔎 Analyse", type="primary", use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     if not go:
         st.stop()
 
     st.session_state.ticker = (ticker or "").strip().upper()
+    if not st.session_state.ticker:
+        st.warning("⚠️ Please enter a ticker (e.g., AAPL, 005930.KS).")
+        st.stop()
     st.session_state.started = True
     st.rerun()
 
-# Results Screen
+# -------------------------
+# Results screen
+# -------------------------
 st.title("📊 Liquidity & Solvency Analyser")
 
 query = build_query(st.session_state.ticker)
 
-if hasattr(fa, "run_query"):
-    result = fa.run_query(query) 
-else:
-    payload = fa.compute_ratios_for_ticker(st.session_state.ticker)
-    result = {
-        "core": {
-            "company": payload.get("company"),
-            "ticker": payload.get("ticker"),
-            "price": payload.get("price"),
-            "ratios": payload.get("ratios", {}),
-        },
-        "notes": payload.get("notes"),
-        "explanation": "",
-    }
+# 분석 실행
+try:
+    with st.spinner("Analyzing ratios & generating narrative..."):
+        if hasattr(fa, "run_query"):
+            result = fa.run_query(query, language=("ko" if lang_label == "한국어" else "en"))
+        else:
+            # 아주 예전 버전 대비 폴백
+            payload = fa.compute_ratios_for_ticker(st.session_state.ticker)
+            result = {
+                "core": {
+                    "company": payload.get("company"),
+                    "ticker": payload.get("ticker"),
+                    "price": payload.get("price"),
+                    "ratios": payload.get("ratios", {}),
+                },
+                "notes": payload.get("notes"),
+                "explanation": "",
+            }
+except Exception as e:
+    st.error(f"❌ Failed to analyse: {e}")
+    st.stop()
 
-core   = result.get("core", {})
-ratios = core.get("ratios", {})
-liq    = ratios.get("Liquidity", {})
-sol    = ratios.get("Solvency", {})
+core   = result.get("core", {}) or {}
+ratios = core.get("ratios", {}) or {}
+liq    = ratios.get("Liquidity", {}) or {}
+sol    = ratios.get("Solvency", {}) or {}
 
-# Summary
+# Summary row
 cols = st.columns([3,1,1])
 with cols[0]:
     st.subheader(f"{core.get('company','-')}  ({core.get('ticker','-')})")
@@ -163,17 +178,25 @@ with cols[2]:
     cr = liq.get("current_ratio", {})
     st.metric("Liquidity Score", fmt_ratio(cr.get("value")), cr.get("band","N/A"))
 
+# Liquidity
 st.markdown("### 💧 Liquidity")
 cL1, cL2, cL3 = st.columns(3)
 with cL1: ratio_card("Current Ratio", liq.get("current_ratio",{}))
 with cL2: ratio_card("Quick Ratio",   liq.get("quick_ratio",{}))
 with cL3: ratio_card("Cash Ratio",    liq.get("cash_ratio",{}))
 
+# Solvency
 st.markdown("### 🛡️ Solvency")
 cS1, cS2, cS3 = st.columns(3)
 with cS1: ratio_card("Debt-to-Equity",    sol.get("debt_to_equity",{}))
 with cS2: ratio_card("Debt Ratio",        sol.get("debt_ratio",{}))
 with cS3: ratio_card("Interest Coverage", sol.get("interest_coverage",{}))
 
+# Narrative
 st.markdown("### 📝 Narrative")
 st.write(result.get("explanation", "—"))
+
+# Optional: raw JSON view
+if st.session_state.show_json:
+    st.markdown("### 🔍 Raw JSON")
+    st.json(result)
