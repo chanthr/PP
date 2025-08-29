@@ -8,6 +8,13 @@ import pandas as pd
 import yfinance as yf
 from dotenv import load_dotenv
 
+# Tools
+def _short_overview(text: str, max_words: int = 30) -> str: # 30 words summarizer 
+    if not text:
+        return "(not available)"
+    words = str(text).split()
+    return " ".join(words[:max_words]) + ("…" if len(words) > max_words else "")
+
 # --- LangChain / Groq ---
 load_dotenv()
 from langchain_groq import ChatGroq
@@ -272,16 +279,13 @@ def pick_valid_ticker(user_query: str) -> str:
 # =========================
 _output_parser = StrOutputParser()
 _prompt = ChatPromptTemplate.from_messages([
-    ("system", 
-     "You are a financial analysis assistant. "
-     "Write in {ask_lang}. "
-     "Be concise and clear. "
-     "When summarizing company description, limit to **30 words maximum (or 30 Korean words if Korean)**."
+    ("system",
+     "You are a financial analysis assistant. Write in {ask_lang}. "
+     "Be concise and clear. Use Markdown headings and bullet points."
     ),
     ("human",
-     "Return **Markdown only** using **this exact template**:\n\n"
      "### 회사 개요 / Company overview\n"
-     "{business_summary}\n\n"
+     "{overview_30}\n\n"
      "### 💧 유동성 / Liquidity\n"
      "- Current Ratio: <value> (<band>)\n"
      "- Quick Ratio: <value> (<band>)\n"
@@ -291,11 +295,9 @@ _prompt = ChatPromptTemplate.from_messages([
      "- Debt Ratio: <value> (<band>)\n"
      "- Interest Coverage: <value> (<band>)\n\n"
      "### ✅ 종합 평가 / Overall financial health\n"
-     "Provide a **1–2 sentence** overall judgment combining liquidity and solvency.\n\n"
+     "Write 1–2 sentences evaluating the company’s financial strength using liquidity & solvency.\n\n"
      "### ℹ️ 핵심 요약 / Takeaway\n"
-     "One short plain-language takeaway.\n\n"
-     "Use the data below.\n"
-     "BUSINESS_SUMMARY:\n{business_summary}\n\n"
+     "Give one short plain-language takeaway.\n\n"
      "RATIOS_JSON:\n{ratios_json}"
     ),
     MessagesPlaceholder("agent_scratchpad"),
@@ -370,12 +372,15 @@ def _make_narrative_with_langchain(payload: Dict, language: str, business_summar
         return _fallback_narrative(payload, language, business_summary)
 
     ask_lang = "Korean" if language.lower().startswith("ko") else "English"
+    overview_30 = _short_overview(business_summary, 30)
+
     inputs = {
         "ask_lang": ask_lang,
-        "business_summary": business_summary or "(not available)",
+        "overview_30": overview_30,                   # ✅ 새 변수
         "ratios_json": json.dumps(payload, ensure_ascii=False),
         "agent_scratchpad": [],
     }
+
     chain = _prompt | llm | _output_parser
     try:
         return chain.invoke(inputs)
