@@ -263,7 +263,8 @@ _prompt = ChatPromptTemplate.from_messages([
      "Task:\n"
      "1) Briefly describe what the company does (1–2 sentences). Use the provided BUSINESS_SUMMARY if present.\n"
      "2) Summarize liquidity (current/quick/cash) and solvency (D/E, debt ratio, interest coverage) with two decimals and a label (Strong/Fair/Weak).\n"
-     "3) End with one short takeaway in plain language.\n\n"
+     "3) Provide one short plain-language takeaway.\n"
+     "4) Finally, give a 1–2 sentence overall evaluation of the company's financial health (liquidity + solvency combined). Use clear judgmental language (e.g., 'overall financially strong', 'moderately healthy but leveraged', 'weak financial standing').\n\n"
      "BUSINESS_SUMMARY:\n{business_summary}\n\n"
      "RATIOS_JSON:\n{ratios_json}"
     ),
