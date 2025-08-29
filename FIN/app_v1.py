@@ -1,4 +1,5 @@
 # app_v1.py
+import re
 import os
 import json
 import streamlit as st
@@ -195,18 +196,27 @@ with cS3: ratio_card("Interest Coverage", sol.get("interest_coverage",{}))
 # Narrative
 st.markdown("### 📝 Narrative")
 
+def _prettify_markdown(narr: str) -> str:
+    s = (narr or "—").strip()
+
+    # 1) 중간에 박혀있는 " • " 불릿을 마크다운 리스트로 변환
+    s = s.replace(" • ", "\n\n- ")
+    s = s.replace("\n• ", "\n\n- ")
+    s = s.replace("• ", "- ")  # 문장 시작 불릿 보정
+
+    # 2) 주요 섹션 라벨을 굵게 + 줄바꿈
+    s = re.sub(r"\b(회사 개요:)", r"**\1**\n\n", s)
+    s = re.sub(r"\b(유동성:)",   r"\n\n**\1** ", s)
+    s = re.sub(r"\b(건전성:)",   r"\n\n**\1** ", s)
+    s = re.sub(r"\b(한줄평:)",   r"\n\n**\1** ", s)
+
+    # 3) 너무 긴 한 덩어리일 때. 마침표 뒤에 두 칸 개행을 넣어 문단 분리(과도하면 주석처리)
+    # s = re.sub(r"\. ", ".\n\n", s)
+
+    return s
+
 narr = result.get("explanation", "—") or "—"
-
-# LLM이 마크다운 섹션/불릿을 그대로 내보내므로, 그대로 렌더
-st.markdown(narr)
-
-# (선택) 'Overall financial health' 첫 줄을 상단에 강조 표시
-import re
-m = re.search(r"###\s*✅\s*Overall financial health\s*(.+)", narr, re.IGNORECASE | re.DOTALL)
-if m:
-    headline = m.group(1).strip().splitlines()[0]
-    if headline:
-        st.success(headline)
+st.markdown(_prettify_markdown(narr))
 
 # Optional: raw JSON view
 if st.session_state.show_json:
