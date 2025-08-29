@@ -75,7 +75,7 @@ if "ticker" not in st.session_state:
     st.session_state.ticker = ""   # <-- no default "AAPL"
 
 if "phoenix_started" not in st.session_state:
-    px.launch_app()  # Phoenix UI 실행
+    #px.launch_app()  # Phoenix UI 실행
     tracer_provider = register()  # Phoenix OTel tracer 등록
     LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
     st.session_state.phoenix_started = True
