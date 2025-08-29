@@ -222,3 +222,8 @@ st.markdown(_prettify_markdown(narr))
 if st.session_state.show_json:
     st.markdown("### 🔍 Raw JSON")
     st.json(result)
+
+# app_v1.py 결과 아래에 표시 (요약 행 근처)
+src = (result.get("meta") or {}).get("source")
+if src == "fallback":
+    st.caption("⚙️ Narrative generated with fallback (LLM unavailable).")
